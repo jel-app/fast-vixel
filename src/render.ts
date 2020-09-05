@@ -1,11 +1,9 @@
 import { vec3, mat4, ReadonlyVec3 } from 'gl-matrix';
-import { createSkyMapRenderer } from './atmosphereEnvmap';
 import { create2DSkyMapRenderer } from './atmosphereEnvmap2d';
 import { PingPong } from './pingpong';
 import { Camera } from  './camera';
 import { REGL, safeProp, REGLLoader } from './regl';
 import { Framebuffer2D, Texture2D } from 'regl';
-// import { Vector3 } from '../../type';
 
 type SampleOpts = {
   groundColor:vec3|number[];
@@ -52,21 +50,21 @@ type DisplayProps = {
 export function getRenderer(regl:REGL, reglLoader:REGLLoader) {
   const canvas:HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
   const sunDistance = 149600000000;
-  const enableCubeMap = false;
+  // let enableCubeMap = true;
 
-  // let sunPosition:number[]|vec3 = vec3.scale(
-  //   vec3.create(), vec3.normalize(vec3.create(), [1.11, -0.0, 0.25]),
-  //   sunDistance,
-  // );
+  const sunPosition = vec3.scale(
+    vec3.create(),
+    vec3.normalize(vec3.create(), [1.11, -0.0, 0.25]),
+    sunDistance,
+  );
 
-  const sunPosition:number[]|vec3 = [146417025226.45273, 7829459053.944404, 29680200382.728428];
-
-  const renderSkyMap = createSkyMapRenderer(regl);
   const renderSkyMap2D = create2DSkyMapRenderer(regl);
-  let skyMap = renderSkyMap2D({
+
+  const skyMap = renderSkyMap2D({
     sunDirection: vec3.normalize(vec3.create(), sunPosition as ReadonlyVec3),
     resolution: 1024,
   });
+
   const pingpong = PingPong(regl, {
     width: canvas.offsetWidth,
     height: canvas.offsetHeight,
@@ -193,7 +191,14 @@ export function getRenderer(regl:REGL, reglLoader:REGLLoader) {
       count: 6,
     },
     true,
+    // {
+    //   ENVMAP: () => {
+    //     console.log('ENVMAP', enableCubeMap);
+    //     return enableCubeMap;
+    //   },
+    // },
   );
+
   const displayProps = safeProp<DisplayProps>(regl);
   const cmdDisplay = regl({
     vert: `
@@ -240,33 +245,33 @@ export function getRenderer(regl:REGL, reglLoader:REGLLoader) {
   }
 
   function computeNewEnvMap(sunPos:vec3|number[]) {
-    if (enableCubeMap) {
-      if (skyMap.name === 'reglFramebuffer') {
-        skyMap.destroy();
-        skyMap = renderSkyMap({
-          sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
-          resolution: 1024,
-        });
-      } else {
-        renderSkyMap({
-          sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
-          cubeFBO: skyMap,
-        });
-      }
-    } else {
-      if (skyMap.name === 'reglFramebufferCube') {
-        skyMap.destroy();
-        skyMap = renderSkyMap2D({
-          sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
-          resolution: 1024,
-        });
-      } else {
-        renderSkyMap2D({
-          sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
-          envFBO: skyMap,
-        });
-      }
-    }
+    // if (enableCubeMap) {
+    //   if (skyMap.name === 'reglFramebuffer') {
+    //     skyMap.destroy();
+    //     skyMap = renderSkyMap({
+    //       sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
+    //       resolution: 1024,
+    //     });
+    //   } else {
+    //     renderSkyMap({
+    //       sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
+    //       cubeFBO: skyMap,
+    //     });
+    //   }
+    // } else {
+    //   if (skyMap.name === 'reglFramebufferCube') {
+    //     skyMap.destroy();
+    //     skyMap = renderSkyMap2D({
+    //       sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
+    //       resolution: 1024,
+    //     });
+    //   } else {
+    //   }
+    // }
+    renderSkyMap2D({
+      sunDirection: vec3.normalize(vec3.create(), sunPos as ReadonlyVec3),
+      envFBO: skyMap,
+    });
   }
 
   let sampleCount = 0;
@@ -279,7 +284,7 @@ export function getRenderer(regl:REGL, reglLoader:REGLLoader) {
     for (let i = 0; i < opts.count; i++) {
       cmdSample({
         source: pingpong.ping(),
-        invpv: camera.invViewProjection,
+        invpv: camera.invpv(),
         eye: camera.eye,
         res: [canvas.offsetWidth, canvas.offsetHeight],
         tOffset: [Math.random(), Math.random()],
@@ -335,7 +340,10 @@ export function getRenderer(regl:REGL, reglLoader:REGLLoader) {
     sample,
     display,
     reset,
-    sampleCount: function() {
+    // useCubeMap: (flag:boolean) => {
+    //   enableCubeMap = flag;
+    // },
+    sampleCount: () => {
       return sampleCount;
     },
   };

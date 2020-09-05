@@ -1,3 +1,5 @@
+import { vec3 } from 'gl-matrix';
+import { StageSerializedData } from './type';
 export declare class VoxelIndex {
     aRGB: Uint8Array;
     aRMET: Uint8Array;
@@ -22,6 +24,16 @@ declare type pbrVoxelData = {
     transparent: number;
     refract: number;
 };
+export declare type voxleMaterialOpts = {
+    red?: number;
+    green?: number;
+    blue?: number;
+    rough?: number;
+    metal?: number;
+    emit?: number;
+    transparent?: number;
+    refract?: number;
+};
 export declare class Stage {
     private regl;
     private width;
@@ -34,25 +46,16 @@ export declare class Stage {
     private tRMET;
     private tRi;
     private textureSize;
-    constructor(regl: any, width: any, height: any, depth: any);
-    getWidth(): number;
-    getHeight(): number;
-    getDepth(): number;
-    key(x: any, y: any, z: any): string;
-    set(x: any, y: any, z: any, { red, green, blue, rough, metal, emit, transparent, refract, }?: {
-        red?: number | undefined;
-        green?: number | undefined;
-        blue?: number | undefined;
-        rough?: number | undefined;
-        metal?: number | undefined;
-        emit?: number | undefined;
-        transparent?: number | undefined;
-        refract?: number | undefined;
-    }): void;
-    updateBounds(width: any, height: any, depth: any): void;
-    unset(x: any, y: any, z: any): void;
-    get(x: any, y: any, z: any): pbrVoxelData;
+    constructor(regl: any, size: number[] | vec3);
+    getSize(): number[];
+    key(x: number, y: number, z: number): string;
+    set(x: number, y: number, z: number, { red, green, blue, rough, metal, emit, transparent, refract, }: voxleMaterialOpts): void;
+    setSize(width: number, height: number, depth: number): void;
+    unset(x: number, y: number, z: number): void;
+    get(x: number, y: number, z: number): pbrVoxelData;
     clear(): void;
     update(): void;
+    serialize(): StageSerializedData;
+    deserialize(d: StageSerializedData): void;
 }
 export {};

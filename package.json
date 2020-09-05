@@ -17,14 +17,12 @@
     "url": "git+https://github.com/Francis-Tao-jinjin/fast-vixel.git"
   },
   "keywords": [
-    "geometry",
+    "webgl",
     "gl",
-    "line to line distance",
-    "segment to segment distance",
-    "line to segment distance",
-    "fast-vixel",
-    "segment distance",
-    "3d"
+    "voxel",
+    "vixel",
+    "fast vixel",
+    "path tracing"
   ],
   "author": "francis Tao jinjin",
   "license": "GPL-3.0",

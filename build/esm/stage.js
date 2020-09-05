@@ -59,33 +59,27 @@ var VoxelIndex = (function () {
 }());
 exports.VoxelIndex = VoxelIndex;
 var Stage = (function () {
-    function Stage(regl, width, height, depth) {
+    function Stage(regl, size) {
         this.data = {};
         this.vIndex = new VoxelIndex();
         this.textureSize = 0;
         this.regl = regl;
-        this.width = width;
-        this.height = height;
-        this.depth = depth;
+        this.width = size[0];
+        this.height = size[1];
+        this.depth = size[2];
         this.tIndex = this.regl.texture();
         this.tRGB = this.regl.texture();
         this.tRMET = this.regl.texture();
         this.tRi = this.regl.texture();
     }
-    Stage.prototype.getWidth = function () {
-        return this.width;
-    };
-    Stage.prototype.getHeight = function () {
-        return this.height;
-    };
-    Stage.prototype.getDepth = function () {
-        return this.depth;
+    Stage.prototype.getSize = function () {
+        return [this.width, this.height, this.depth];
     };
     Stage.prototype.key = function (x, y, z) {
         return x + " " + y + " " + z;
     };
     Stage.prototype.set = function (x, y, z, _a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.red, red = _c === void 0 ? 1 : _c, _d = _b.green, green = _d === void 0 ? 1 : _d, _e = _b.blue, blue = _e === void 0 ? 1 : _e, _f = _b.rough, rough = _f === void 0 ? 255 : _f, _g = _b.metal, metal = _g === void 0 ? 0 : _g, _h = _b.emit, emit = _h === void 0 ? 0 : _h, _j = _b.transparent, transparent = _j === void 0 ? 0 : _j, _k = _b.refract, refract = _k === void 0 ? 1 : _k;
+        var _b = _a.red, red = _b === void 0 ? 1 : _b, _c = _a.green, green = _c === void 0 ? 1 : _c, _d = _a.blue, blue = _d === void 0 ? 1 : _d, _e = _a.rough, rough = _e === void 0 ? 255 : _e, _f = _a.metal, metal = _f === void 0 ? 0 : _f, _g = _a.emit, emit = _g === void 0 ? 0 : _g, _h = _a.transparent, transparent = _h === void 0 ? 0 : _h, _j = _a.refract, refract = _j === void 0 ? 85 : _j;
         if (x < 0 || x >= this.width) {
             throw new Error('Voxel: set out of bounds.');
         }
@@ -107,7 +101,7 @@ var Stage = (function () {
             refract: refract,
         };
     };
-    Stage.prototype.updateBounds = function (width, height, depth) {
+    Stage.prototype.setSize = function (width, height, depth) {
         this.width = width;
         this.height = height;
         this.depth = depth;
@@ -150,6 +144,7 @@ var Stage = (function () {
             width: 256,
             height: 256,
             format: 'rgb',
+            type: 'uint8',
             data: this.vIndex.aRGB,
         });
         this.tRMET({
@@ -166,6 +161,50 @@ var Stage = (function () {
             type: 'uint8',
             data: this.vIndex.aRi,
         });
+    };
+    Stage.prototype.serialize = function () {
+        var out = {
+            version: 0,
+            width: this.width,
+            height: this.height,
+            depth: this.depth,
+            xyz: [],
+            rgb: [],
+            rough: [],
+            metal: [],
+            emit: [],
+            transparent: [],
+            refract: [],
+        };
+        for (var _i = 0, _a = Object.entries(this.data); _i < _a.length; _i++) {
+            var _b = _a[_i], _ = _b[0], v = _b[1];
+            out.xyz.push(v.x, v.y, v.z);
+            out.rgb.push(v.red, v.green, v.blue);
+            out.rough.push(+v.rough.toFixed(3));
+            out.metal.push(+v.metal.toFixed(3));
+            out.emit.push(+v.emit.toFixed(3));
+            out.transparent.push(+v.transparent.toFixed(3));
+            out.refract.push(+v.refract.toFixed(3));
+        }
+        return out;
+    };
+    Stage.prototype.deserialize = function (d) {
+        this.clear();
+        this.width = d.width;
+        this.height = d.height;
+        this.depth = d.depth;
+        for (var i = 0; i < d.xyz.length / 3; i++) {
+            this.set(d.xyz[i * 3 + 0], d.xyz[i * 3 + 1], d.xyz[i * 3 + 2], {
+                red: d.rgb[i * 3 + 0] / 255,
+                green: d.rgb[i * 3 + 1] / 255,
+                blue: d.rgb[i * 3 + 2] / 255,
+                rough: d.rough[i],
+                metal: d.metal[i],
+                emit: d.emit[i],
+                transparent: d.transparent[i],
+                refract: d.refract[i],
+            });
+        }
     };
     return Stage;
 }());

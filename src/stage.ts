@@ -1,5 +1,7 @@
 import { fillArray } from './utils/fill';
 import { Texture2D } from 'regl';
+import { vec3 } from 'gl-matrix';
+import { StageSerializedData } from './type';
 
 export class VoxelIndex {
   public aRGB:Uint8Array;
@@ -78,6 +80,17 @@ type pbrVoxelData = {
   refract:number;
 };
 
+export type voxleMaterialOpts = {
+  red?:number;
+  green?:number;
+  blue?:number;
+  rough?:number,
+  metal?:number,
+  emit?:number;
+  transparent?:number;
+  refract?:number;
+};
+
 export class Stage {
   private regl:any;
   private width:number;
@@ -91,34 +104,26 @@ export class Stage {
   private tRi:Texture2D;
   private textureSize = 0;
 
-  constructor(regl, width, height, depth) {
+  constructor(regl, size:number[]|vec3) {
     this.regl = regl;
-    this.width = width;
-    this.height = height;
-    this.depth = depth;
+    this.width = size[0];
+    this.height = size[1];
+    this.depth = size[2];
     this.tIndex = this.regl.texture();
     this.tRGB = this.regl.texture();
     this.tRMET = this.regl.texture();
     this.tRi = this.regl.texture();
   }
 
-  public getWidth() {
-    return this.width;
+  public getSize() {
+    return [this.width, this.height, this.depth];
   }
 
-  public getHeight() {
-    return this.height;
-  }
-
-  public getDepth() {
-    return this.depth;
-  }
-
-  public key(x, y, z) {
+  public key(x:number, y:number, z:number) {
     return `${x} ${y} ${z}`;
   }
 
-  public set(x, y, z, {
+  public set(x:number, y:number, z:number, {
                       red = 1,
                       green = 1,
                       blue = 1,
@@ -126,8 +131,8 @@ export class Stage {
                       metal = 0,
                       emit = 0,
                       transparent = 0,
-                      refract = 1,
-                      } = {}) {
+                      refract = 85,
+                      }:voxleMaterialOpts) {
     if (x < 0 || x >= this.width) {
       throw new Error('Voxel: set out of bounds.');
     }
@@ -150,20 +155,20 @@ export class Stage {
     };
   }
 
-  public updateBounds(width, height, depth) {
+  public setSize(width:number, height:number, depth:number) {
     this.width = width;
     this.height = height;
     this.depth = depth;
   }
 
-  public unset(x, y, z) {
+  public unset(x:number, y:number, z:number) {
     if (Object.keys(this.data).length === 1) {
       return;
     }
     delete this.data[this.key(x, y, z)];
   }
 
-  public get(x, y, z) {
+  public get(x:number, y:number, z:number) {
     return this.data[this.key(x, y, z)];
   }
 
@@ -199,6 +204,7 @@ export class Stage {
       width: 256,
       height: 256,
       format: 'rgb',
+      type: 'uint8',
       data: this.vIndex.aRGB,
     });
     this.tRMET({
@@ -215,5 +221,50 @@ export class Stage {
       type: 'uint8',
       data: this.vIndex.aRi,
     });
+  }
+
+  public serialize() {
+    const out:StageSerializedData = {
+      version: 0,
+      width: this.width,
+      height: this.height,
+      depth: this.depth,
+      xyz: [],
+      rgb: [],
+      rough: [],
+      metal: [],
+      emit: [],
+      transparent: [],
+      refract: [],
+    };
+    for (const [_, v] of Object.entries(this.data)) {
+      out.xyz.push(v.x, v.y, v.z);
+      out.rgb.push(v.red, v.green, v.blue);
+      out.rough.push(+v.rough.toFixed(3));
+      out.metal.push(+v.metal.toFixed(3));
+      out.emit.push(+v.emit.toFixed(3));
+      out.transparent.push(+v.transparent.toFixed(3));
+      out.refract.push(+v.refract.toFixed(3));
+    }
+    return out;
+  }
+
+  public deserialize(d:StageSerializedData) {
+    this.clear();
+    this.width = d.width;
+    this.height = d.height;
+    this.depth = d.depth;
+    for (let i = 0; i < d.xyz.length / 3; i++) {
+      this.set(d.xyz[i * 3 + 0], d.xyz[i * 3 + 1], d.xyz[i * 3 + 2], {
+        red: d.rgb[i * 3 + 0] / 255,
+        green: d.rgb[i * 3 + 1] / 255,
+        blue: d.rgb[i * 3 + 2] / 255,
+        rough: d.rough[i],
+        metal: d.metal[i],
+        emit: d.emit[i],
+        transparent: d.transparent[i],
+        refract: d.refract[i],
+      });
+    }
   }
 }

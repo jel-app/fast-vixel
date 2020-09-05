@@ -1,39 +1,49 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PBRRenderer = void 0;
 var render_1 = require("./render");
 var stage_1 = require("./stage");
 var camera_1 = require("./camera");
 var gl_matrix_1 = require("gl-matrix");
 var regl_1 = require("./regl");
 var createREGL = require("regl");
-var PBRRenderer = (function () {
-    function PBRRenderer(canvas, width, height, depth) {
+module.exports = (function () {
+    function FastVixel(opts) {
         var _this = this;
-        this._ground = { color: [0.55, 0.55, 0.55], rough: 1, metal: 0.6 };
-        this._sun = { time: 6.2, azimuth: 0.2, radius: 16, intensity: 1 };
+        if (opts === void 0) { opts = {
+            size: [32, 32, 32],
+        }; }
+        this._ground = { color: [1, 1, 1], rough: 1, metal: 0 };
+        this._sun = { time: 11, azimuth: 5, radius: 16, intensity: 1 };
         this._dof = { distance: 0.5, magnitude: 0 };
         this._renderDirty = true;
         this._stageDirty = true;
-        this.totalSamplesCount = 512;
-        this._canvas = canvas;
-        var regl = createREGL({
-            canvas: canvas,
-            extensions: ['OES_texture_float'],
-            attributes: {
-                antialias: false,
-                preserveDrawingBuffer: true,
-            },
-        });
-        var reglLoader = regl_1.createREGLCache(regl, true);
-        this.camera = new camera_1.Camera(this._canvas);
-        this.renderer = render_1.getRenderer(regl, reglLoader);
-        this._canvas = regl._gl.canvas;
-        this.stage = new stage_1.Stage(regl, width, height, depth);
+        if (opts.canvas) {
+            this._canvas = opts.canvas;
+            this.regl = createREGL({
+                canvas: opts.canvas,
+                extensions: ['OES_texture_float'],
+                attributes: {
+                    antialias: false,
+                    preserveDrawingBuffer: true,
+                },
+            });
+        }
+        else {
+            this.regl = createREGL({
+                extensions: ['OES_texture_float'],
+                attributes: {
+                    antialias: false,
+                    preserveDrawingBuffer: true,
+                },
+            });
+            this._canvas = this.regl._gl.canvas;
+        }
+        var reglLoader = regl_1.createREGLCache(this.regl, true);
+        this._camera = new camera_1.Camera(this._canvas);
+        this._renderer = render_1.getRenderer(this.regl, reglLoader);
+        this._canvas = this.regl._gl.canvas;
+        this._stage = new stage_1.Stage(this.regl, opts.size);
         this.oldCanvasSize = [this._canvas.offsetWidth, this._canvas.offsetHeight];
-        this.camera.on(camera_1.CameraEvent.cameraMoveEnd, function () {
-            _this._renderDirty = true;
-        });
         var lastResizeTime = 0;
         window.addEventListener('resize', function () {
             lastResizeTime = Date.now();
@@ -44,49 +54,61 @@ var PBRRenderer = (function () {
             }, 500);
         });
     }
-    PBRRenderer.prototype.getWidth = function () {
-        return this.stage.getWidth();
+    FastVixel.prototype.getSize = function () {
+        return this._stage.getSize();
     };
-    PBRRenderer.prototype.getHeight = function () {
-        return this.stage.getHeight();
-    };
-    PBRRenderer.prototype.getDepth = function () {
-        return this.stage.getDepth();
-    };
-    PBRRenderer.prototype.updateBounds = function (width, height, depth) {
-        this.stage.updateBounds(width, height, depth);
+    FastVixel.prototype.setSize = function (width, height, depth) {
+        this._stage.setSize(width, height, depth);
         this._stageDirty = false;
     };
-    PBRRenderer.prototype.set = function (x, y, z, opts) {
-        this.stage.set(x, y, z, opts);
+    FastVixel.prototype.set = function (x, y, z, opts) {
+        this._stage.set(x, y, z, opts);
         this._stageDirty = true;
     };
-    PBRRenderer.prototype.unset = function (x, y, z) {
-        this.stage.unset(x, y, z);
+    FastVixel.prototype.unset = function (x, y, z) {
+        this._stage.unset(x, y, z);
         this._stageDirty = true;
     };
-    PBRRenderer.prototype.get = function (x, y, z) {
-        return this.stage.get(x, y, z);
+    FastVixel.prototype.get = function (x, y, z) {
+        return this._stage.get(x, y, z);
     };
-    PBRRenderer.prototype.clear = function () {
-        this.stage.clear();
+    FastVixel.prototype.clear = function () {
+        this._stage.clear();
         this._stageDirty = true;
     };
-    Object.defineProperty(PBRRenderer.prototype, "sampleCount", {
+    Object.defineProperty(FastVixel.prototype, "sampleCount", {
         get: function () {
-            return this.renderer.sampleCount();
+            return this._renderer.sampleCount();
         },
         enumerable: false,
         configurable: true
     });
-    PBRRenderer.prototype.getGround = function () {
+    FastVixel.prototype.setCamera = function (param) {
+        if (param.eye && !gl_matrix_1.vec3.equals(param.eye, this._camera.eye)) {
+            gl_matrix_1.vec3.copy(this._camera.eye, param.eye);
+            this._renderDirty = true;
+        }
+        if (param.center && !gl_matrix_1.vec3.equals(param.center, this._camera.center)) {
+            gl_matrix_1.vec3.copy(this._camera.center, param.center);
+            this._renderDirty = true;
+        }
+        if (param.up && !gl_matrix_1.vec3.equals(param.up, this._camera.up)) {
+            gl_matrix_1.vec3.copy(this._camera.up, param.up);
+            this._renderDirty = true;
+        }
+        if (param.fov && param.fov !== this._camera.fov) {
+            this._camera.fov = param.fov;
+            this._renderDirty = true;
+        }
+    };
+    FastVixel.prototype.getGround = function () {
         return {
             color: this._ground.color,
             rough: this._ground.rough,
             metal: this._ground.metal,
         };
     };
-    PBRRenderer.prototype.setGround = function (param) {
+    FastVixel.prototype.setGround = function (param) {
         if (param.color !== undefined && !gl_matrix_1.vec3.equals(param.color, this._ground.color)) {
             this._ground.color[0] = param.color[0];
             this._ground.color[1] = param.color[1];
@@ -102,7 +124,7 @@ var PBRRenderer = (function () {
             this._renderDirty = true;
         }
     };
-    PBRRenderer.prototype.getSun = function () {
+    FastVixel.prototype.getSun = function () {
         return {
             time: this._sun.time,
             azimuth: this._sun.azimuth,
@@ -110,7 +132,7 @@ var PBRRenderer = (function () {
             intensity: this._sun.intensity,
         };
     };
-    PBRRenderer.prototype.setSun = function (param) {
+    FastVixel.prototype.setSun = function (param) {
         if (param.time !== undefined && param.time !== this._sun.time) {
             this._sun.time = param.time;
             this._renderDirty = true;
@@ -128,7 +150,7 @@ var PBRRenderer = (function () {
             this._renderDirty = true;
         }
     };
-    PBRRenderer.prototype.setDof = function (distance, magnitude) {
+    FastVixel.prototype.dof = function (distance, magnitude) {
         if (this._dof.distance === distance &&
             this._dof.magnitude === magnitude) {
             return;
@@ -137,23 +159,26 @@ var PBRRenderer = (function () {
         this._dof.magnitude = magnitude;
         this._renderDirty = true;
     };
-    PBRRenderer.prototype.sample = function (count, totalCount) {
+    FastVixel.prototype.sample = function (count, totalCount) {
         if (totalCount === void 0) { totalCount = Infinity; }
+        if (totalCount <= 0) {
+            totalCount = Infinity;
+        }
         if (this.oldCanvasSize[0] !== this._canvas.offsetWidth &&
             this.oldCanvasSize[1] !== this._canvas.offsetHeight) {
             this.oldCanvasSize = [this._canvas.offsetWidth, this._canvas.offsetHeight];
             this._renderDirty = true;
         }
         if (this._stageDirty) {
-            this.stage.update();
+            this._stage.update();
             this._renderDirty = true;
             this._stageDirty = false;
         }
         if (this._renderDirty) {
-            this.renderer.reset();
+            this._renderer.reset();
             this._renderDirty = false;
         }
-        this.sampleCount < totalCount && this.renderer.sample(this.stage, this.camera, {
+        this.sampleCount < totalCount && this._renderer.sample(this._stage, this._camera, {
             groundColor: this._ground.color,
             groundRoughness: this._ground.rough,
             groundMetalness: this._ground.metal,
@@ -165,12 +190,31 @@ var PBRRenderer = (function () {
             dofMag: this._dof.magnitude,
             count: count,
         });
-        this._onProgressUpdate && this._onProgressUpdate((this.sampleCount / totalCount));
+        if (totalCount !== Infinity) {
+            this.onProgressUpdate && this.onProgressUpdate((this.sampleCount / totalCount));
+        }
     };
-    PBRRenderer.prototype.display = function () {
-        this.renderer.display();
+    FastVixel.prototype.display = function () {
+        this._renderer.display();
     };
-    return PBRRenderer;
+    FastVixel.prototype.serialize = function () {
+        return {
+            stage: this._stage.serialize(),
+            camera: this._camera.serialize(),
+            dof: JSON.parse(JSON.stringify(this._dof)),
+            sun: JSON.parse(JSON.stringify(this._sun)),
+            ground: JSON.parse(JSON.stringify(this._ground)),
+        };
+    };
+    FastVixel.prototype.deserialize = function (data) {
+        this._stage.deserialize(data.stage);
+        this._camera.deserialize(data.camera);
+        this._dof = JSON.parse(JSON.stringify(data.dof));
+        this._sun = JSON.parse(JSON.stringify(data.sun));
+        this._ground = JSON.parse(JSON.stringify(data.ground));
+        this._stageDirty = true;
+        this._renderDirty = true;
+    };
+    return FastVixel;
 }());
-exports.PBRRenderer = PBRRenderer;
 //# sourceMappingURL=index.js.map

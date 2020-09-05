@@ -2,11 +2,12 @@ precision highp float;
 
 uniform sampler2D tRGB, tRMET, tRi, tIndex, t2Sphere, t3Sphere, tUniform2, tUniform1, source;
 
-#ifdef ENVMAP
-  uniform samplerCube tSky;
-#else
-  uniform sampler2D tSky;
-#endif
+// #ifdef ENVMAP
+//   uniform samplerCube tSky;
+// #else
+//   uniform sampler2D tSky;
+// #endif
+uniform sampler2D tSky;
 
 uniform mat4 invpv;
 uniform vec3 eye, bounds, lightPosition, groundColor;
@@ -125,9 +126,9 @@ VoxelData getVoxelData(vec3 v) {
   vec4 rmet = texture2D(tRMET, vd.index);
   vd.roughness = rmet.r;
   vd.metalness = rmet.g;
-  vd.emission = rmet.b * 4.0;
+  vd.emission = rmet.b * 5.0;
   vd.transparent = rmet.a;
-  vd.ri = texture2D(tRi, vd.index).r * 2.0;
+  vd.ri = texture2D(tRi, vd.index).r * 3.0;
   return vd;
 }
 
@@ -152,13 +153,16 @@ vec3 skyColor(vec3 r0, vec3 r, float sunScale) {
   if (r.y < 0.0) {
     return vec3(0.0);
   }
-  #ifdef ENVMAP
-    vec3 sky = textureCube(tSky, r).rgb;
-  #else
-    vec2 envUV = normalToParaboloid(vec3(r.x, abs(r.y), r.z));
-    envUV.x = 0.5 * (envUV.x + step(0., r.y));
-    vec3 sky = texture2D(tSky, envUV).rgb;
-  #endif
+  // #ifdef ENVMAP
+  //   vec3 sky = textureCube(tSky, r).rgb;
+  // #else
+  //   vec2 envUV = normalToParaboloid(vec3(r.x, abs(r.y), r.z));
+  //   envUV.x = 0.5 * (envUV.x + step(0., r.y));
+  //   vec3 sky = texture2D(tSky, envUV).rgb;
+  // #endif
+  vec2 envUV = normalToParaboloid(vec3(r.x, abs(r.y), r.z));
+  envUV.x = 0.5 * (envUV.x + step(0., r.y));
+  vec3 sky = texture2D(tSky, envUV).rgb;
 
   if (raySphereIntersect(r0, r, lightPosition, lightRadius) > 0.0) {
     sky += vec3(lightIntensity) * sunScale;

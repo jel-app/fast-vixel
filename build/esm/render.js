@@ -2,16 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRenderer = void 0;
 var gl_matrix_1 = require("gl-matrix");
-var atmosphereEnvmap_1 = require("./atmosphereEnvmap");
 var atmosphereEnvmap2d_1 = require("./atmosphereEnvmap2d");
 var pingpong_1 = require("./pingpong");
 var regl_1 = require("./regl");
 function getRenderer(regl, reglLoader) {
     var canvas = regl._gl.canvas;
     var sunDistance = 149600000000;
-    var enableCubeMap = false;
-    var sunPosition = [146417025226.45273, 7829459053.944404, 29680200382.728428];
-    var renderSkyMap = atmosphereEnvmap_1.createSkyMapRenderer(regl);
+    var sunPosition = gl_matrix_1.vec3.scale(gl_matrix_1.vec3.create(), gl_matrix_1.vec3.normalize(gl_matrix_1.vec3.create(), [1.11, -0.0, 0.25]), sunDistance);
     var renderSkyMap2D = atmosphereEnvmap2d_1.create2DSkyMapRenderer(regl);
     var skyMap = renderSkyMap2D({
         sunDirection: gl_matrix_1.vec3.normalize(gl_matrix_1.vec3.create(), sunPosition),
@@ -155,36 +152,10 @@ function getRenderer(regl, reglLoader) {
         ];
     }
     function computeNewEnvMap(sunPos) {
-        if (enableCubeMap) {
-            if (skyMap.name === 'reglFramebuffer') {
-                skyMap.destroy();
-                skyMap = renderSkyMap({
-                    sunDirection: gl_matrix_1.vec3.normalize(gl_matrix_1.vec3.create(), sunPos),
-                    resolution: 1024,
-                });
-            }
-            else {
-                renderSkyMap({
-                    sunDirection: gl_matrix_1.vec3.normalize(gl_matrix_1.vec3.create(), sunPos),
-                    cubeFBO: skyMap,
-                });
-            }
-        }
-        else {
-            if (skyMap.name === 'reglFramebufferCube') {
-                skyMap.destroy();
-                skyMap = renderSkyMap2D({
-                    sunDirection: gl_matrix_1.vec3.normalize(gl_matrix_1.vec3.create(), sunPos),
-                    resolution: 1024,
-                });
-            }
-            else {
-                renderSkyMap2D({
-                    sunDirection: gl_matrix_1.vec3.normalize(gl_matrix_1.vec3.create(), sunPos),
-                    envFBO: skyMap,
-                });
-            }
-        }
+        renderSkyMap2D({
+            sunDirection: gl_matrix_1.vec3.normalize(gl_matrix_1.vec3.create(), sunPos),
+            envFBO: skyMap,
+        });
     }
     var sampleCount = 0;
     function sample(stage, camera, opts) {
@@ -196,7 +167,7 @@ function getRenderer(regl, reglLoader) {
         for (var i = 0; i < opts.count; i++) {
             cmdSample({
                 source: pingpong.ping(),
-                invpv: camera.invViewProjection,
+                invpv: camera.invpv(),
                 eye: camera.eye,
                 res: [canvas.offsetWidth, canvas.offsetHeight],
                 tOffset: [Math.random(), Math.random()],
