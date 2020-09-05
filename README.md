@@ -101,8 +101,7 @@ sets a voxel at coordinates `x, y, z` with options, similar to vixel.set(x, y, z
 | rough       | **Uint8** | **255**     | The roughness of the voxel surface. Zero is perfectly smooth, 255 is completely rough.                                   |
 | metal       | **Uint8** | 0     | The metalness of the voxel surface. Zero is completely nonmetallic, 255 is fully metallic.                               |
 | transparent | **Uint8** | 0     | The transparency of the voxel. Zero is completely opaque, 255 is completely clear.                                       |
-| refract     | **Uint8** | 85     | The refraction index of the voxel. This value will mapping from **[0, 255] to [0, 3]** in shader, so 85 will be convert to 1. And air has a value of 1.0 * 85 and glass is around 1.333 * 85 => 113. 
-Although some materials have a refractive index greater than 3, common materials are basically within 3.                                   |
+| refract     | **Uint8** | 85     | The refraction index of the voxel. This value will mapping from **[0, 255] to [0, 3]** in shader, so 85 will be convert to 1. And air has a value of 1.0 * 85 and glass is around 1.333 * 85 => 113. Although some materials have a refractive index greater than 3, common materials are basically within 3.                                   |
 | emit        | **Uint8** | 0     | The amount of light the voxel emits. If this is nonzero, `rough`, `metal`, `transparent`, and `refract` will be ignored. This value will mapping from **[0, 255] to [0, 5]**, and the object that has emissive at 5 is actually very bright|
 
 
