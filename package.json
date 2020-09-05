@@ -1,0 +1,58 @@
+{
+  "name": "fast-vixel",
+  "version": "1.0.0",
+  "description": "an improved version of wwwtyro's vixel, mainly to speed up the rendering speed and reduce memory usage.",
+  "main": "build/FastVixel.js",
+  "types": "build/esm/index.d.ts",
+  "scripts": {
+    "build": "rm -rf build && npm run ts:build && npm run webpack:build",
+    "start": "budo -d docs ./start.js:docs/bundle.js --live",
+    "ts:build": "tsc --project ./scripts/tsconfig.build.json",
+    "test": "tape -r ts-node/register test.ts",
+    "webpack:watch": "webpack -w --env.production --mode=development",
+    "webpack:build": "webpack -p --env.production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Francis-Tao-jinjin/fast-vixel.git"
+  },
+  "keywords": [
+    "geometry",
+    "gl",
+    "line to line distance",
+    "segment to segment distance",
+    "line to segment distance",
+    "fast-vixel",
+    "segment distance",
+    "3d"
+  ],
+  "author": "francis Tao jinjin",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Francis-Tao-jinjin/fast-vixel/issues"
+  },
+  "homepage": "https://github.com/Francis-Tao-jinjin/fast-vixel#readme",
+  "devDependencies": {
+    "@types/node": "^8.10.38",
+    "@types/tape": "^4.2.32",
+    "budo": "^11.6.0",
+    "glslify": "^7.1.1",
+    "glslify-loader": "^2.0.0",
+    "html-webpack-plugin": "^3.2.0",
+    "raw-loader": "^1.0.0",
+    "ts-loader": "^7.0.1",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.3.0",
+    "mouse-wheel": "^1.2.0",
+    "regl": "^1.6.1",
+    "tape": "^4.9.1",
+    "ts-node": "^7.0.1",
+    "tsify": "^4.0.1",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.4",
+    "typescript-tslint-plugin": "^0.1.0"
+  }
+}
