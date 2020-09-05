@@ -8,7 +8,6 @@
     "build": "rm -rf build && npm run ts:build && npm run webpack:build",
     "start": "budo -d docs ./start.js:docs/bundle.js --live",
     "ts:build": "tsc --project ./scripts/tsconfig.build.json",
-    "test": "tape -r ts-node/register test.ts",
     "webpack:watch": "webpack -w --env.production --mode=development",
     "webpack:build": "webpack -p --env.production"
   },
