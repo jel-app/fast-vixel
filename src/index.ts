@@ -52,16 +52,6 @@ module.exports = class FastVixel {
         this._canvas = this.regl._gl.canvas;
         this._stage = new Stage(this.regl, opts.size);
         this.oldCanvasSize = [this._canvas.offsetWidth, this._canvas.offsetHeight];
-
-        let lastResizeTime = 0;
-        window.addEventListener('resize', () => {
-        lastResizeTime = Date.now();
-        setTimeout(() => {
-            if (Date.now() - lastResizeTime >= 500) {
-            this._renderDirty = true;
-            }
-        }, 500);
-        });
     }
 
     public getSize() {
