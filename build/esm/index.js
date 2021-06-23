@@ -8,7 +8,6 @@ var regl_1 = require("./regl");
 var createREGL = require("regl");
 module.exports = (function () {
     function FastVixel(opts) {
-        var _this = this;
         if (opts === void 0) { opts = {
             size: [32, 32, 32],
         }; }
@@ -44,15 +43,6 @@ module.exports = (function () {
         this._canvas = this.regl._gl.canvas;
         this._stage = new stage_1.Stage(this.regl, opts.size);
         this.oldCanvasSize = [this._canvas.offsetWidth, this._canvas.offsetHeight];
-        var lastResizeTime = 0;
-        window.addEventListener('resize', function () {
-            lastResizeTime = Date.now();
-            setTimeout(function () {
-                if (Date.now() - lastResizeTime >= 500) {
-                    _this._renderDirty = true;
-                }
-            }, 500);
-        });
     }
     FastVixel.prototype.getSize = function () {
         return this._stage.getSize();
